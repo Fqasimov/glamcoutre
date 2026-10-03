@@ -22,6 +22,15 @@ function introSeen() {
   }
 }
 
+// History updates can be refused inside sandboxed frames; the viewer works without them.
+function safeHistory(fn: () => void) {
+  try {
+    fn()
+  } catch {
+    // Ignore: the look stays open, only the address bar does not change.
+  }
+}
+
 function lookFromHash() {
   const index = LOOKS.findIndex((l) => `#${l.id}` === window.location.hash)
   return index >= 0 ? index : null
@@ -50,14 +59,16 @@ export default function App() {
     setViewer({ look, view, source })
     viewerOpen.current = true
     if (source) {
-      window.history.pushState({ look: LOOKS[look].id }, '', `#${LOOKS[look].id}`)
-      pushedEntry.current = true
+      safeHistory(() => {
+        window.history.pushState({ look: LOOKS[look].id }, '', `#${LOOKS[look].id}`)
+        pushedEntry.current = true
+      })
     }
   }, [])
 
   const navigate = useCallback((look: number, view: number) => {
     setViewer((v) => (v ? { ...v, look, view } : v))
-    window.history.replaceState(window.history.state, '', `#${LOOKS[look].id}`)
+    safeHistory(() => window.history.replaceState(window.history.state, '', `#${LOOKS[look].id}`))
   }, [])
 
   const requestClose = useCallback(() => setClosing(true), [])
@@ -70,7 +81,7 @@ export default function App() {
       pushedEntry.current = false
       window.history.back()
     } else {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      safeHistory(() => window.history.replaceState(null, '', window.location.pathname + window.location.search))
     }
   }, [])
 

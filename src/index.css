@@ -382,7 +382,8 @@ a {
   position: fixed;
   inset: 0 0 auto;
   z-index: 100;
-  height: var(--header-h);
+  height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   background: var(--paper);
   border-bottom: 1px solid transparent;
   transition: border-color 300ms ease;

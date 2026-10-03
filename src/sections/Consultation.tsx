@@ -14,6 +14,7 @@ function formatDate(value: string) {
 export function Consultation() {
   const id = useId()
   const nameRef = useRef<HTMLInputElement>(null)
+  const sendRef = useRef<HTMLAnchorElement>(null)
   const [name, setName] = useState('')
   const [occasion, setOccasion] = useState(OCCASIONS[0])
   const [date, setDate] = useState('')
@@ -21,22 +22,28 @@ export function Consultation() {
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
 
+  const chosen = LOOKS.find((l) => l.id === look)
+  const message = [
+    `Hello Glamlove, my name is ${name.trim() || '…'}.`,
+    `I would like to book a consultation for ${occasion === 'Something else' ? 'an occasion' : `a ${occasion.toLowerCase()}`}${date ? ` on ${formatDate(date)}` : ''}.`,
+    chosen ? `I love Look ${chosen.no}, the ${chosen.name.toLowerCase()}.` : '',
+    note.trim(),
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const valid = () => {
+    if (name.trim()) return true
+    setError('Add your name so we know who we are speaking with.')
+    nameRef.current?.focus()
+    return false
+  }
+
+  // The send control is a real link to WhatsApp (pop-ups get blocked); pressing
+  // Enter in a field follows the same link once the form is valid.
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    if (!name.trim()) {
-      setError('Add your name so we know who we are speaking with.')
-      nameRef.current?.focus()
-      return
-    }
-    setError('')
-    const chosen = LOOKS.find((l) => l.id === look)
-    const parts = [
-      `Hello Glamlove, my name is ${name.trim()}.`,
-      `I would like to book a consultation for ${occasion === 'Something else' ? 'an occasion' : `a ${occasion.toLowerCase()}`}${date ? ` on ${formatDate(date)}` : ''}.`,
-      chosen ? `I love Look ${chosen.no}, the ${chosen.name.toLowerCase()}.` : '',
-      note.trim(),
-    ].filter(Boolean)
-    window.open(whatsappLink(parts.join(' ')), '_blank', 'noopener,noreferrer')
+    if (valid()) sendRef.current?.click()
   }
 
   return (
@@ -114,9 +121,18 @@ export function Consultation() {
           <textarea id={`${id}-note`} rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         <div className="envelope__submit">
-          <button type="submit" className="button">
+          <a
+            ref={sendRef}
+            className="button"
+            href={whatsappLink(message)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => {
+              if (!valid()) e.preventDefault()
+            }}
+          >
             Continue on WhatsApp <ArrowRight />
-          </button>
+          </a>
         </div>
       </form>
     </section>
